@@ -16,7 +16,7 @@
     Searches line by line for any sequential set of characters
     At least very simple regex will work here, but haven't tested it very extensively (wildcards work)
 #>
-Function SearchLogFilesForKeyword($keyword,$logpath)
+Function SearchLogFilesForKeyword($keyword,$logpath,$verb)
 {
     # Pulling all filenames from the path
     $files = Get-ChildItem -Path $logpath
@@ -54,11 +54,12 @@ Function SearchLogFilesForKeyword($keyword,$logpath)
         # Otherwise, print what we found (including line numbers)
         else 
         {
-            Write-Host "Found $occurrences occurrences of keyword $keyword :"
-            foreach ($line in $lines) 
-            {
-                Write-Host $line
-            }
+            ParseInput $lines $verb
+            # Write-Host "Found $occurrences occurrences of keyword $keyword :"
+            # foreach ($line in $lines) 
+            # {
+            #     Write-Host $line
+            # }
         }
         
     }
@@ -103,6 +104,16 @@ Function FindLogFilePath($serverName)
     BREAK;
 }
 
+Function ParseInput($lines,$verb)
+{
+    foreach ($line in $lines) 
+    {
+        if ($line -match $verb) 
+        {
+            Write-Host $line
+        }
+    }
+}
 
 #######################################
 #                                     #
@@ -117,6 +128,19 @@ $keyword = ""
 # Prompt for variables
 $serverName = Read-Host -Prompt "Server name"
 $keyword = Read-Host -Prompt "Keyword to search for"
+$verb = ""
+Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: Downloading`n2: Copying`n3: Archiving`n4: Uploading`n5: Any of these`n") 
+{
+    '1' {$verb = "Download"}
+    '2' {$verb = "Copy"}
+    '3' {$verb = "Archiv"}
+    '4' {$verb = "Upload"}
+    '5' {$verb = ""}
+    default {
+        Read-Host "ERROR: That's not valid input. Please press ENTER to exit and try again."
+        BREAK
+        }
+}
 
 # Check that variables are not empt
 if ([string]::IsNullOrEmpty($serverName) -or [string]::IsNullOrEmpty($keyword)) 
@@ -131,7 +155,7 @@ $logPath = FindLogFilePath $serverName
 $logPath = $logPath + "\*.txt"
 
 # Perform the search
- SearchLogFilesForKeyword $keyword $logPath
+ SearchLogFilesForKeyword $keyword $logPath $verb
 
  # Hang so we can look at our results...
  Read-Host "Press the enter key to exit"
