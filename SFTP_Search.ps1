@@ -43,7 +43,7 @@ Function SearchLogFilesForKeyword($keyword,$logpath,$verb)
             {
                 # Increment the number of occurrences and add the linenumber + line to the lines array
                 $occurrences++
-                $lines += "$lineNumber ... $line"
+                $lines += "$lineNumber ..." + ' ' * (10 - $lineNumber.ToString().Length) + "$line"
             }
         }
         # If nothing found, say so
@@ -106,13 +106,44 @@ Function FindLogFilePath($serverName)
 
 Function ParseInput($lines,$verb)
 {
-    foreach ($line in $lines) 
+    $newLines = @()
+    $dates = @()
+    if ($verb -eq "")
     {
-        if ($line -match $verb) 
+        # We are looking at all of them, so recursion is our friend 
+        ParseInput($lines,": Download")
+        ParseInput($lines,": Upload")
+        ParseInput($lines,": Archive")
+        ParseInput($lines,": Copy")
+    }
+    else 
+    {
+        foreach ($line in $lines) 
         {
-            Write-Host $line
+            if ($line -match $verb) 
+            {
+                $newLines += $line
+                $dates += $line.Substring(14,10)
+            }
+        }
+        $dates = $dates | Sort -Unique
+        foreach ($date in $dates) 
+        {
+            Write-Host "DATE: $date"
+            Write-Host "==========================="
+            Write-Host ""
+            foreach ($line in $newLines) 
+            {
+                
+                if ($line -match $date)
+                {   
+                    Write-Host $line.Substring(25,5) : $line.Substring(34)
+                }
+            }
+            Write-Host ""
         }
     }
+    
 }
 
 #######################################
@@ -131,16 +162,15 @@ $keyword = Read-Host -Prompt "Keyword to search for"
 $verb = ""
 Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: Downloading`n2: Copying`n3: Archiving`n4: Uploading`n5: Any of these`n") 
 {
-    '1' {$verb = "Download"}
-    '2' {$verb = "Copy"}
-    '3' {$verb = "Archiv"}
-    '4' {$verb = "Upload"}
+    '1' {$verb = ": Download"}
+    '2' {$verb = ": Copy"}
+    '3' {$verb = ": Archived"}
+    '4' {$verb = ": Upload"}
     '5' {$verb = ""}
     default {
-        Read-Host "ERROR: That's not valid input. Please press ENTER to exit and try again."
-        BREAK
         }
 }
+Write-Host ""
 
 # Check that variables are not empt
 if ([string]::IsNullOrEmpty($serverName) -or [string]::IsNullOrEmpty($keyword)) 
