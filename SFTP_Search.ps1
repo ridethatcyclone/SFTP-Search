@@ -104,13 +104,19 @@ Function FindLogFilePath($serverName)
     BREAK;
 }
 
+<#
+    Parses the information from the file and prints it out in a more readable format.
+#>
 Function ParseInput($lines,$verb)
 {
+    # Set up our arrays
     $newLines = @()
     $dates = @()
+
+    # If $verb is empty, the user wants to see all the verb types 
+    # TODO: actually break this out (as is, output is TERRIBLE)
     if ($verb -eq "")
     {
-        # We are looking at all of them, so recursion is our friend 
         ParseInput($lines,": Download")
         ParseInput($lines,": Upload")
         ParseInput($lines,": Archive")
@@ -118,23 +124,32 @@ Function ParseInput($lines,$verb)
     }
     else 
     {
+        # For every line we pulled out of the file,
         foreach ($line in $lines) 
         {
+            # If it uses the specified verb,
             if ($line -match $verb) 
             {
+                # Save it and its date off
                 $newLines += $line
                 $dates += $line.Substring(14,10)
             }
         }
+        # Remove duplicate dates
         $dates = $dates | Sort -Unique
+
+        # For every unique date we grabbed,
         foreach ($date in $dates) 
         {
+            # Print out a header
             Write-Host "DATE: $date"
             Write-Host "==========================="
             Write-Host ""
+            # For every line,
             foreach ($line in $newLines) 
             {
-                
+                # If the line is for the current date, print it out
+                # Formate; HH:MM : LINE TEXT
                 if ($line -match $date)
                 {   
                     Write-Host $line.Substring(25,5) : $line.Substring(34)
@@ -159,7 +174,11 @@ $keyword = ""
 # Prompt for variables
 $serverName = Read-Host -Prompt "Server name"
 $keyword = Read-Host -Prompt "Keyword to search for"
+
+# $verb will be used to filter our results
 $verb = ""
+
+# Get input from the user on which verb to search for. If no input or anything other than 1-5, $verb remains empty, meaning we look at all of them
 Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: Downloading`n2: Copying`n3: Archiving`n4: Uploading`n5: Any of these`n") 
 {
     '1' {$verb = ": Download"}
@@ -172,7 +191,7 @@ Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: D
 }
 Write-Host ""
 
-# Check that variables are not empt
+# Check that variables (except $verb) are not empty
 if ([string]::IsNullOrEmpty($serverName) -or [string]::IsNullOrEmpty($keyword)) 
 {
     Write-Error "Variables cannot be empty; Please try again."
