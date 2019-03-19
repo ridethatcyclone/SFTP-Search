@@ -9,6 +9,7 @@
     # TODO: option to input a direct path, just in case the file locations are different
     # TODO: validate that we only read .txt files to be safe
     # TODO: option to print output to file
+    # TODO: option to specify which file (if multiple are found) to read from
 #>
 
 <#
@@ -115,12 +116,13 @@ Function ParseInput($lines,$verb)
 
     # If $verb is empty, the user wants to see all the verb types 
     # TODO: actually break this out (as is, output is TERRIBLE)
+    # also, slightly broken
     if ($verb -eq "")
     {
-        ParseInput($lines,": Download")
-        ParseInput($lines,": Upload")
-        ParseInput($lines,": Archive")
-        ParseInput($lines,": Copy")
+        ParseInput($lines,': Download')
+        ParseInput($lines,': Upload')
+        ParseInput($lines,': Archive')
+        ParseInput($lines,': Copy')
     }
     else 
     {
