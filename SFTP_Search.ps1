@@ -119,10 +119,7 @@ Function ParseInput($lines,$verb)
     # also, slightly broken
     if ($verb -eq "")
     {
-        ParseInput($lines,': Download')
-        ParseInput($lines,': Upload')
-        ParseInput($lines,': Archive')
-        ParseInput($lines,': Copy')
+        ParseInputAllTypes $lines 
     }
     else 
     {
@@ -137,30 +134,54 @@ Function ParseInput($lines,$verb)
                 $dates += $line.Substring(14,10)
             }
         }
-        # Remove duplicate dates
-        $dates = $dates | Sort -Unique
+    }
+    PrintOutput $newLines $dates 
+    
+}
 
-        # For every unique date we grabbed,
-        foreach ($date in $dates) 
+Function ParseInputAllTypes($lines)
+{
+    $newLines = @()
+    $dates = @()
+    foreach ($line in $lines) 
+    {
+        foreach ($item in $verbs)
         {
-            # Print out a header
-            Write-Host "DATE: $date"
-            Write-Host "==========================="
-            Write-Host ""
-            # For every line,
-            foreach ($line in $newLines) 
+            if ($line -match $item) 
             {
-                # If the line is for the current date, print it out
-                # Formate; HH:MM : LINE TEXT
-                if ($line -match $date)
-                {   
-                    Write-Host $line.Substring(25,5) : $line.Substring(34)
-                }
+                $newLines += $line 
+                $dates += $line.Substring(14,10)
             }
-            Write-Host ""
         }
     }
+    PrintOutput $newLines $dates 
     
+}
+
+Function PrintOutput($newLines,$dates)
+{
+     # Remove duplicate dates
+     $dates = $dates | Sort-Object -Unique
+
+     # For every unique date we grabbed,
+     foreach ($date in $dates) 
+     {
+         # Print out a header
+         Write-Host "DATE: $date"
+         Write-Host "==========================="
+         Write-Host ""
+         # For every line,
+         foreach ($line in $newLines) 
+         {
+             # If the line is for the current date, print it out
+             # Formate; HH:MM : LINE TEXT
+             if ($line -match $date)
+             {   
+                 Write-Host $line.Substring(25,5) : $line.Substring(34)
+             }
+         }
+         Write-Host ""
+     }
 }
 
 #######################################
@@ -179,15 +200,15 @@ $keyword = Read-Host -Prompt "Keyword to search for"
 
 # $verb will be used to filter our results
 $verb = ""
+$verbs = @(": Download",": Copy",": Archived",": Upload")
 
 # Get input from the user on which verb to search for. If no input or anything other than 1-5, $verb remains empty, meaning we look at all of them
 Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: Downloading`n2: Copying`n3: Archiving`n4: Uploading`n5: Any of these`n") 
 {
-    '1' {$verb = ": Download"}
-    '2' {$verb = ": Copy"}
-    '3' {$verb = ": Archived"}
-    '4' {$verb = ": Upload"}
-    '5' {$verb = ""}
+    '1' {$verb = $verbs[0]}
+    '2' {$verb = $verbs[1]}
+    '3' {$verb = $verbs[2]}
+    '4' {$verb = $verbs[3]}
     default {
         }
 }
