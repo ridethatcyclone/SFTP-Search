@@ -198,6 +198,39 @@ Function CheckExit()
     }
 }
 
+<#
+    Prompts user to select a specific file to search through
+#>
+Function SelectFile($path) 
+{
+    Write-Host "Entering SelectFile function"
+    $files = Get-ChildItem $path -Filter '*.txt'
+    $prompt = "Which file would you like to search?`n"
+    $i = 1
+    Write-Host "About to enter foreach loop. Prompt = $prompt"
+    foreach ($file in $files) 
+    {
+        $prompt += "$i : " + $file.Name + "`n"
+        $i++
+    }
+    $prompt += "$i : All of the above`n"
+
+    $selection = Read-Host $prompt
+    if ($selection -eq $i) 
+    {
+        return 1
+    }
+    # TODO: more work on this error handling. It works right now but I don't know why. That's bad :)
+    try {
+        return $files[$selection-1].Name
+    }
+    catch {
+        Write-Error "That was not a valid input, please restart the program and try again"
+        BREAK
+    }
+    
+}
+
 #######################################
 #                                     #
 #                MAIN                 #
@@ -240,7 +273,10 @@ while (1)
 
     # Get filepath for Log folder (error handling for invalid server names is in the function)
     $logPath = FindLogFilePath $serverName
-    $logPath = $logPath + "\*.txt"
+    $selection = SelectFile $logPath
+
+    if ($selection -eq 1) { $logPath = $logPath + "\*.txt" } 
+    else { $logPath = $logPath + "\$selection" }
 
     # Perform the search
     SearchLogFilesForKeyword $keyword $logPath $verb
