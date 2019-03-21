@@ -3,11 +3,7 @@
     Author: Abby Horner
     Date: 3/12/2019
 
-    Change Log:
-
-    # TODO: break information out into a more readable format
     # TODO: option to input a direct path, just in case the file locations are different
-    # TODO: validate that we only read .txt files to be safe
     # TODO: option to print output to file
     # TODO: option to specify which file (if multiple are found) to read from
 #>
@@ -15,7 +11,7 @@
 <#
     Function to search through files in a directory for a specific keyword
     Searches line by line for any sequential set of characters
-    At least very simple regex will work here, but haven't tested it very extensively (wildcards work)
+    Regex may break it
 #>
 Function SearchLogFilesForKeyword($keyword,$logpath,$verb)
 {
@@ -114,9 +110,7 @@ Function ParseInput($lines,$verb)
     $newLines = @()
     $dates = @()
 
-    # If $verb is empty, the user wants to see all the verb types 
-    # TODO: actually break this out (as is, output is TERRIBLE)
-    # also, slightly broken
+    # If $verb is empty, throw this to the other function to print a readable timeline of all actions
     if ($verb -eq "")
     {
         ParseInputAllTypes $lines 
@@ -135,18 +129,24 @@ Function ParseInput($lines,$verb)
             }
         }
     }
+    # Throw the selected lines to the print function
     PrintOutput $newLines $dates 
     
 }
 
 Function ParseInputAllTypes($lines)
 {
+    # Same variables as above
     $newLines = @()
     $dates = @()
+
+    # For all the lines,
     foreach ($line in $lines) 
     {
+        # and for all the verbs,
         foreach ($item in $verbs)
         {
+            # if the line has one of the verbs, save it off into $newLines
             if ($line -match $item) 
             {
                 $newLines += $line 
@@ -154,6 +154,7 @@ Function ParseInputAllTypes($lines)
             }
         }
     }
+    # Throw the selected lines to the print function
     PrintOutput $newLines $dates 
     
 }
@@ -174,9 +175,9 @@ Function PrintOutput($newLines,$dates)
          foreach ($line in $newLines) 
          {
              # If the line is for the current date, print it out
-             # Formate; HH:MM : LINE TEXT
              if ($line -match $date)
              {   
+                 # Format = HH:MM : LINE TEXT
                  Write-Host $line.Substring(25,5) : $line.Substring(34)
              }
          }
