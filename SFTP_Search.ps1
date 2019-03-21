@@ -3,20 +3,17 @@
     Author: Abby Horner
     Date: 3/12/2019
 
-    Change Log:
-
-    # TODO: break information out into a more readable format
     # TODO: option to input a direct path, just in case the file locations are different
-    # TODO: validate that we only read .txt files to be safe
     # TODO: option to print output to file
+    # TODO: option to specify which file (if multiple are found) to read from
 #>
 
 <#
     Function to search through files in a directory for a specific keyword
     Searches line by line for any sequential set of characters
-    At least very simple regex will work here, but haven't tested it very extensively (wildcards work)
+    Regex may break it
 #>
-Function SearchLogFilesForKeyword($keyword,$logpath)
+Function SearchLogFilesForKeyword($keyword,$logpath,$verb)
 {
     # Pulling all filenames from the path
     $files = Get-ChildItem -Path $logpath
@@ -43,7 +40,7 @@ Function SearchLogFilesForKeyword($keyword,$logpath)
             {
                 # Increment the number of occurrences and add the linenumber + line to the lines array
                 $occurrences++
-                $lines += "$lineNumber ... $line"
+                $lines += "$lineNumber ..." + ' ' * (10 - $lineNumber.ToString().Length) + "$line"
             }
         }
         # If nothing found, say so
@@ -54,11 +51,12 @@ Function SearchLogFilesForKeyword($keyword,$logpath)
         # Otherwise, print what we found (including line numbers)
         else 
         {
-            Write-Host "Found $occurrences occurrences of keyword $keyword :"
-            foreach ($line in $lines) 
-            {
-                Write-Host $line
-            }
+            ParseInput $lines $verb
+            # Write-Host "Found $occurrences occurrences of keyword $keyword :"
+            # foreach ($line in $lines) 
+            # {
+            #     Write-Host $line
+            # }
         }
         
     }
@@ -103,6 +101,89 @@ Function FindLogFilePath($serverName)
     BREAK;
 }
 
+<#
+    Parses the information from the file and prints it out in a more readable format.
+#>
+Function ParseInput($lines,$verb)
+{
+    # Set up our arrays
+    $newLines = @()
+    $dates = @()
+
+    # If $verb is empty, throw this to the other function to print a readable timeline of all actions
+    if ($verb -eq "")
+    {
+        ParseInputAllTypes $lines 
+    }
+    else 
+    {
+        # For every line we pulled out of the file,
+        foreach ($line in $lines) 
+        {
+            # If it uses the specified verb,
+            if ($line -match $verb) 
+            {
+                # Save it and its date off
+                $newLines += $line
+                $dates += $line.Substring(14,10)
+            }
+        }
+    }
+    # Throw the selected lines to the print function
+    PrintOutput $newLines $dates 
+    
+}
+
+Function ParseInputAllTypes($lines)
+{
+    # Same variables as above
+    $newLines = @()
+    $dates = @()
+
+    # For all the lines,
+    foreach ($line in $lines) 
+    {
+        # and for all the verbs,
+        foreach ($item in $verbs)
+        {
+            # if the line has one of the verbs, save it off into $newLines
+            if ($line -match $item) 
+            {
+                $newLines += $line 
+                $dates += $line.Substring(14,10)
+            }
+        }
+    }
+    # Throw the selected lines to the print function
+    PrintOutput $newLines $dates 
+    
+}
+
+Function PrintOutput($newLines,$dates)
+{
+     # Remove duplicate dates
+     $dates = $dates | Sort-Object -Unique
+
+     # For every unique date we grabbed,
+     foreach ($date in $dates) 
+     {
+         # Print out a header
+         Write-Host "DATE: $date"
+         Write-Host "==========================="
+         Write-Host ""
+         # For every line,
+         foreach ($line in $newLines) 
+         {
+             # If the line is for the current date, print it out
+             if ($line -match $date)
+             {   
+                 # Format = HH:MM : LINE TEXT
+                 Write-Host $line.Substring(25,5) : $line.Substring(34)
+             }
+         }
+         Write-Host ""
+     }
+}
 
 #######################################
 #                                     #
@@ -118,7 +199,23 @@ $keyword = ""
 $serverName = Read-Host -Prompt "Server name"
 $keyword = Read-Host -Prompt "Keyword to search for"
 
-# Check that variables are not empt
+# $verb will be used to filter our results
+$verb = ""
+$verbs = @(": Download",": Copy",": Archived",": Upload")
+
+# Get input from the user on which verb to search for. If no input or anything other than 1-5, $verb remains empty, meaning we look at all of them
+Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: Downloading`n2: Copying`n3: Archiving`n4: Uploading`n5: Any of these`n") 
+{
+    '1' {$verb = $verbs[0]}
+    '2' {$verb = $verbs[1]}
+    '3' {$verb = $verbs[2]}
+    '4' {$verb = $verbs[3]}
+    default {
+        }
+}
+Write-Host ""
+
+# Check that variables (except $verb) are not empty
 if ([string]::IsNullOrEmpty($serverName) -or [string]::IsNullOrEmpty($keyword)) 
 {
     Write-Error "Variables cannot be empty; Please try again."
@@ -131,7 +228,7 @@ $logPath = FindLogFilePath $serverName
 $logPath = $logPath + "\*.txt"
 
 # Perform the search
- SearchLogFilesForKeyword $keyword $logPath
+ SearchLogFilesForKeyword $keyword $logPath $verb
 
  # Hang so we can look at our results...
  Read-Host "Press the enter key to exit"
