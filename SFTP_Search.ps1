@@ -185,50 +185,68 @@ Function PrintOutput($newLines,$dates)
      }
 }
 
+Function CheckExit() 
+{
+    while (1) 
+    {
+        $exit = Read-Host "Exit? Y/N"
+        switch($exit) {
+            'Y' {return 1}
+            'N' {return 0}
+            default {Write-Host "Please select Y or N"}
+        }
+    }
+}
+
 #######################################
 #                                     #
 #                MAIN                 #
 #                                     #
 #######################################
 
-# Create empty variables
-$serverName = ""
-$keyword = ""
-
-# Prompt for variables
-$serverName = Read-Host -Prompt "Server name"
-$keyword = Read-Host -Prompt "Keyword to search for"
-
-# $verb will be used to filter our results
-$verb = ""
-$verbs = @(": Download",": Copy",": Archived",": Upload")
-
-# Get input from the user on which verb to search for. If no input or anything other than 1-5, $verb remains empty, meaning we look at all of them
-Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: Downloading`n2: Copying`n3: Archiving`n4: Uploading`n5: Any of these`n") 
+while (1) 
 {
-    '1' {$verb = $verbs[0]}
-    '2' {$verb = $verbs[1]}
-    '3' {$verb = $verbs[2]}
-    '4' {$verb = $verbs[3]}
-    default {
-        }
+    # Create empty variables
+    $serverName = ""
+    $keyword = ""
+
+    # Prompt for variables
+    $serverName = Read-Host -Prompt "Server name"
+    $keyword = Read-Host -Prompt "Keyword to search for"
+
+    # $verb will be used to filter our results
+    $verb = ""
+    $verbs = @(": Download",": Copy",": Archived",": Upload")
+
+    # Get input from the user on which verb to search for. If no input or anything other than 1-5, $verb remains empty, meaning we look at all of them
+    Switch (Read-Host -Prompt "Which action are you looking for (type number)?`n1: Downloading`n2: Copying`n3: Archiving`n4: Uploading`n5: Any of these`n") 
+    {
+        '1' {$verb = $verbs[0]}
+        '2' {$verb = $verbs[1]}
+        '3' {$verb = $verbs[2]}
+        '4' {$verb = $verbs[3]}
+        default {
+            }
+    }
+    Write-Host ""
+
+    # Check that variables (except $verb) are not empty
+    if ([string]::IsNullOrEmpty($serverName) -or [string]::IsNullOrEmpty($keyword)) 
+    {
+        Write-Error "Variables cannot be empty; Please try again."
+        Read-Host "Press enter to exit"
+        BREAK;
+    }
+
+    # Get filepath for Log folder (error handling for invalid server names is in the function)
+    $logPath = FindLogFilePath $serverName
+    $logPath = $logPath + "\*.txt"
+
+    # Perform the search
+    SearchLogFilesForKeyword $keyword $logPath $verb
+
+    # Hang so we can look at our results...
+    $exit = CheckExit
+    if ($exit -eq 1) {BREAK}
 }
-Write-Host ""
 
-# Check that variables (except $verb) are not empty
-if ([string]::IsNullOrEmpty($serverName) -or [string]::IsNullOrEmpty($keyword)) 
-{
-    Write-Error "Variables cannot be empty; Please try again."
-    Read-Host "Press enter to exit"
-    BREAK;
-}
-
-# Get filepath for Log folder (error handling for invalid server names is in the function)
-$logPath = FindLogFilePath $serverName
-$logPath = $logPath + "\*.txt"
-
-# Perform the search
- SearchLogFilesForKeyword $keyword $logPath $verb
-
- # Hang so we can look at our results...
- Read-Host "Press the enter key to exit"
