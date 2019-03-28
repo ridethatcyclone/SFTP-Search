@@ -220,15 +220,40 @@ Function SelectFile($path)
 
     # Finally, prompt the user
     $selection = Read-Host $prompt
-    if ($selection -eq $i) 
+
+    # If the selection string is empty, error
+    if ([string]::IsNullOrEmpty($selection))
     {
-        # If they choose to view all the files, just return 1
+        Write-Error "That was not a valid input, pleas restart the program and try again."
+        BREAK;
+    }
+
+    try {
+        # turn it into an int
+        $selection = [int]$selection
+    } 
+    catch {
+        # if not possible, error out
+        Write-Error "That was not a valid input, pleas restart the program and try again."
+        BREAK;
+    }
+
+    # if selection is a number, but not a valid choice, error out
+    if ($selection -lt 1 -or $selection -gt $i) 
+    {
+        Write-Error "That was not a valid input, please restart the program and try again"
+        BREAK
+    } 
+
+    # If they choose to view all the files, just return 1
+    if ([int]$selection -eq [int]$i) 
+    {
         return 1
     }
-    # TODO: more work on this error handling. It works right now but I don't know why. That's bad :)
+    
     try {
         # Otherwise, return the name of the file they chose (selection - 1, because computer counting)
-        return $files[$selection-1].Name
+        Write-Host $files[[int]$selection-1].Name
     }
     catch {
         Write-Error "That was not a valid input, please restart the program and try again"
