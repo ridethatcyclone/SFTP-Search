@@ -5,7 +5,7 @@
 
     # TODO: option to input a direct path, just in case the file locations are different
     # TODO: option to print output to file
-    # TODO: option to specify which file (if multiple are found) to read from
+    # TODO: let user pick multiple files? stretch goal
 #>
 
 <#
@@ -203,11 +203,14 @@ Function CheckExit()
 #>
 Function SelectFile($path) 
 {
-    Write-Host "Entering SelectFile function"
+    # Get a list of files
     $files = Get-ChildItem $path -Filter '*.txt'
+
+    # Initial prompt without the list of files
     $prompt = "Which file would you like to search?`n"
     $i = 1
-    Write-Host "About to enter foreach loop. Prompt = $prompt"
+
+    # Dynamically generate our list of files to search...
     foreach ($file in $files) 
     {
         $prompt += "$i : " + $file.Name + "`n"
@@ -215,13 +218,16 @@ Function SelectFile($path)
     }
     $prompt += "$i : All of the above`n"
 
+    # Finally, prompt the user
     $selection = Read-Host $prompt
     if ($selection -eq $i) 
     {
+        # If they choose to view all the files, just return 1
         return 1
     }
     # TODO: more work on this error handling. It works right now but I don't know why. That's bad :)
     try {
+        # Otherwise, return the name of the file they chose (selection - 1, because computer counting)
         return $files[$selection-1].Name
     }
     catch {
@@ -282,7 +288,6 @@ while (1)
     SearchLogFilesForKeyword $keyword $logPath $verb
 
     # Hang so we can look at our results...
-    $exit = CheckExit
-    if ($exit -eq 1) {BREAK}
+    if (CheckExit -eq 1) {BREAK}
 }
 
