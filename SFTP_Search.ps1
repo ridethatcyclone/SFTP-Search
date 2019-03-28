@@ -102,7 +102,7 @@ Function FindLogFilePath($serverName)
 }
 
 <#
-    Parses the information from the file and prints it out in a more readable format.
+    Parses the information from the file (single verb)
 #>
 Function ParseInput($lines,$verb)
 {
@@ -134,6 +134,9 @@ Function ParseInput($lines,$verb)
     
 }
 
+<#
+    Parses the information a little differently if the user wants to see all verb types
+#>
 Function ParseInputAllTypes($lines)
 {
     # Same variables as above
@@ -159,6 +162,9 @@ Function ParseInputAllTypes($lines)
     
 }
 
+<#
+    Prints the information out in a readable format
+#>
 Function PrintOutput($newLines,$dates)
 {
      # Remove duplicate dates
@@ -185,11 +191,17 @@ Function PrintOutput($newLines,$dates)
      }
 }
 
+<# 
+    Function to hang the program so we can keep searching
+#>
 Function CheckExit() 
 {
+    # unending loop so we can get valid input
     while (1) 
     {
+        # prompt the user
         $exit = Read-Host "Exit? Y/N"
+        # and return, or re-prompt
         switch($exit) {
             'Y' {return 1}
             'N' {return 0}
