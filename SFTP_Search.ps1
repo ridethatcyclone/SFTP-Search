@@ -5,7 +5,7 @@
 
     # TODO: option to input a direct path, just in case the file locations are different
     # TODO: option to print output to file
-    # TODO: option to specify which file (if multiple are found) to read from
+    # TODO: let user pick multiple files? stretch goal
 #>
 
 <#
@@ -198,6 +198,70 @@ Function CheckExit()
     }
 }
 
+<#
+    Prompts user to select a specific file to search through
+#>
+Function SelectFile($path) 
+{
+    # Get a list of files
+    $files = Get-ChildItem $path -Filter '*.txt'
+
+    # Initial prompt without the list of files
+    $prompt = "Which file would you like to search?`n"
+    $i = 1
+
+    # Dynamically generate our list of files to search...
+    foreach ($file in $files) 
+    {
+        $prompt += "$i : " + $file.Name + "`n"
+        $i++
+    }
+    $prompt += "$i : All of the above`n"
+
+    # Finally, prompt the user
+    $selection = Read-Host $prompt
+
+    # If the selection string is empty, error
+    if ([string]::IsNullOrEmpty($selection))
+    {
+        Write-Error "That was not a valid input, pleas restart the program and try again."
+        BREAK;
+    }
+
+    try {
+        # turn it into an int
+        $selection = [int]$selection
+    } 
+    catch {
+        # if not possible, error out
+        Write-Error "That was not a valid input, pleas restart the program and try again."
+        BREAK;
+    }
+
+    # if selection is a number, but not a valid choice, error out
+    if ($selection -lt 1 -or $selection -gt $i) 
+    {
+        Write-Error "That was not a valid input, please restart the program and try again"
+        BREAK
+    } 
+
+    # If they choose to view all the files, just return 1
+    if ([int]$selection -eq [int]$i) 
+    {
+        return 1
+    }
+    
+    try {
+        # Otherwise, return the name of the file they chose (selection - 1, because computer counting)
+        Write-Host $files[[int]$selection-1].Name
+    }
+    catch {
+        Write-Error "That was not a valid input, please restart the program and try again"
+        BREAK
+    }
+    
+}
+
 #######################################
 #                                     #
 #                MAIN                 #
@@ -240,13 +304,15 @@ while (1)
 
     # Get filepath for Log folder (error handling for invalid server names is in the function)
     $logPath = FindLogFilePath $serverName
-    $logPath = $logPath + "\*.txt"
+    $selection = SelectFile $logPath
+
+    if ($selection -eq 1) { $logPath = $logPath + "\*.txt" } 
+    else { $logPath = $logPath + "\$selection" }
 
     # Perform the search
     SearchLogFilesForKeyword $keyword $logPath $verb
 
     # Hang so we can look at our results...
-    $exit = CheckExit
-    if ($exit -eq 1) {BREAK}
+    if (CheckExit -eq 1) {BREAK}
 }
 
